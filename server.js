@@ -168,7 +168,7 @@ app.post('/api/orders/create', (req, res) => {
 
       // Default calculations (supports FCFA/EUR depending on settings)
       // Check if price in FCFA is configured
-      const basePrice = parseFloat(settings.promo_price_fcfa || "49000");
+      const basePrice = parseFloat(settings.promo_price_fcfa || "25000");
       let total = basePrice * parseInt(quantity);
 
       // Apply coupon if valid
@@ -250,7 +250,7 @@ app.post('/api/orders/create', (req, res) => {
 // Interactive simulator view for MoneyFusion payment
 app.get('/pay/moneyfusion/:id', (req, res) => {
   const orderId = req.params.id;
-  const amount = req.query.amount || '49000';
+  const amount = req.query.amount || '25000';
 
   db.get("SELECT * FROM orders WHERE id = ?", [orderId], (err, order) => {
     if (err || !order) {

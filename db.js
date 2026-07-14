@@ -162,8 +162,8 @@ function initDb() {
         { key: "contact_email", value: "dah1bossou@gmail.com" },
         { key: "currency", value: "FCFA" }, // e.g. FCFA or EUR or USD
         { key: "currency_symbol", value: "FCFA" },
-        { key: "price_fcfa", value: "90000" }, // Product Price in FCFA
-        { key: "promo_price_fcfa", value: "49000" }, // Product Promo Price in FCFA
+        { key: "price_fcfa", value: "50000" }, // Product Price in FCFA
+        { key: "promo_price_fcfa", value: "25000" }, // Product Promo Price in FCFA
         { key: "shipping_cost", value: "0" }, // Free Shipping
         { key: "moneyfusion_api_url", value: "https://api.moneyfusion.com" },
         { key: "moneyfusion_merchant_id", value: "MF-MYSTIQUE" }
