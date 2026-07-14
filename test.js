@@ -123,7 +123,7 @@ describe('Mystique Shop Integration Tests', () => {
         assert.strictEqual(res.body.success, true);
         assert.strictEqual(res.body.payment_required, true);
         assert(res.body.payment_url.startsWith('https://wa.me/22964044423'));
-        assert(res.body.payment_url.includes('MoneyFusion%20Pay'));
+        assert(res.body.payment_url.includes('Bague%20Mystique'));
         done();
       });
   });

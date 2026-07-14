@@ -203,7 +203,7 @@ app.post('/api/orders/create', (req, res) => {
           // If moneyfusion is selected, redirect to WhatsApp for payment as requested
           if (payment_method === 'moneyfusion') {
             const encodedMsg = encodeURIComponent(
-              `Bonjour, je souhaite finaliser le paiement de ma commande #${orderId} de la Bague Mystique de Richesse via MoneyFusion Pay.\n` +
+              `Bonjour, je souhaite finaliser le paiement de ma commande #${orderId} de la Bague Mystique de Richesse.\n` +
               `Nom: ${customer_name}\n` +
               `Téléphone: ${whatsapp}\n` +
               `Article: Bague Mystique (${quantity}x, ${color}, Taille ${size})\n` +
