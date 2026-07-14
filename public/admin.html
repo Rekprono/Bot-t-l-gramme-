@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mystique Shop - Tableau de Bord Administrateur</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Montserrat:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Montserrat', sans-serif; }
+    .font-cinzel { font-family: 'Cinzel', serif; }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen">
+
+  <!-- Login Section Overlay -->
+  <div id="login-overlay" class="fixed inset-0 z-50 bg-black flex items-center justify-center p-4">
+    <div class="bg-zinc-900 border border-gold-600/30 p-8 rounded-3xl max-w-md w-full shadow-2xl relative">
+      <div class="text-center mb-6">
+        <span class="text-gold-500 text-2xl font-cinzel tracking-widest font-bold">MYSTIQUE <span class="text-white">ADMIN</span></span>
+        <p class="text-xs text-gray-400 mt-2">Authentification sécurisée requise</p>
+      </div>
+
+      <form id="login-form" class="space-y-4">
+        <div>
+          <label class="text-[10px] text-gray-400 block mb-1 uppercase tracking-wider">Identifiant</label>
+          <input type="text" id="username" required class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-gold-500" placeholder="admin">
+        </div>
+        <div>
+          <label class="text-[10px] text-gray-400 block mb-1 uppercase tracking-wider">Mot de passe</label>
+          <input type="password" id="password" required class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-gold-500" placeholder="••••••••">
+        </div>
+        <button type="submit" class="w-full bg-gradient-to-r from-gold-600 to-gold-500 hover:from-gold-500 hover:to-gold-400 text-black font-extrabold uppercase text-xs py-3.5 rounded-xl tracking-widest transition">
+          Se connecter
+        </button>
+      </form>
+      <div id="login-error" class="hidden mt-4 text-center text-xs text-red-500 font-semibold"></div>
+    </div>
+  </div>
+
+  <!-- Main Dashboard App (Hidden initially) -->
+  <div id="admin-app" class="hidden flex flex-col md:flex-row min-h-screen">
+
+    <!-- Sidebar -->
+    <aside class="w-full md:w-64 bg-zinc-950 border-r border-zinc-900 flex flex-col p-6">
+      <div class="mb-8">
+        <span class="text-gold-500 text-xl font-cinzel tracking-widest font-bold">MYSTIQUE <span class="text-white">SHOP</span></span>
+        <p class="text-[9px] text-zinc-500 uppercase tracking-widest mt-1">Espace Administration</p>
+      </div>
+
+      <!-- Navigation links -->
+      <nav class="flex-grow space-y-2">
+        <button onclick="switchTab('tab-stats')" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-gold-500 bg-gold-950/20 border-l-4 border-gold-500 text-left">
+          <i class="fa-solid fa-chart-pie"></i> Statistiques & Paramètres
+        </button>
+        <button onclick="switchTab('tab-orders')" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-400 hover:text-white hover:bg-zinc-900 text-left">
+          <i class="fa-solid fa-basket-shopping"></i> Gestion Commandes
+        </button>
+        <button onclick="switchTab('tab-product')" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-400 hover:text-white hover:bg-zinc-900 text-left">
+          <i class="fa-solid fa-box"></i> Produit & Photos
+        </button>
+        <button onclick="switchTab('tab-testimonials')" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-400 hover:text-white hover:bg-zinc-900 text-left">
+          <i class="fa-solid fa-comments"></i> Avis & Témoignages
+        </button>
+        <button onclick="switchTab('tab-promotions')" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-400 hover:text-white hover:bg-zinc-900 text-left">
+          <i class="fa-solid fa-tags"></i> Codes Promotions
+        </button>
+      </nav>
+
+      <!-- Logout -->
+      <div class="pt-6 border-t border-zinc-900 mt-auto">
+        <div class="flex items-center justify-between text-xs mb-4">
+          <span class="text-gray-400">Connecté: <span id="admin-user-display" class="font-bold text-white">--</span></span>
+        </div>
+        <button onclick="logout()" class="w-full bg-red-600/10 hover:bg-red-600/20 border border-red-500/30 text-red-400 font-bold py-2.5 rounded-xl text-xs tracking-wider transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-sign-out-alt"></i> Déconnexion
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Panel -->
+    <main class="flex-grow p-6 sm:p-10 overflow-y-auto">
+
+      <!-- TAB 1: STATISTICS & SETTINGS -->
+      <div id="tab-stats" class="tab-content space-y-8">
+        <h2 class="text-2xl font-cinzel font-bold text-white mb-6">Statistiques & Paramètres Généraux</h2>
+
+        <!-- Stats Overview Row -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl">
+            <span class="text-[10px] text-gray-400 uppercase tracking-widest font-semibold block mb-2">Chiffre d'Affaires</span>
+            <p class="text-2xl sm:text-3xl font-cinzel font-bold text-gold-500" id="stat-revenue">0 FCFA</p>
+          </div>
+          <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl">
+            <span class="text-[10px] text-gray-400 uppercase tracking-widest font-semibold block mb-2">Rings Vendus</span>
+            <p class="text-2xl sm:text-3xl font-cinzel font-bold text-white" id="stat-sold">0</p>
+          </div>
+          <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl">
+            <span class="text-[10px] text-gray-400 uppercase tracking-widest font-semibold block mb-2">Commandes Payées</span>
+            <p class="text-2xl sm:text-3xl font-cinzel font-bold text-green-400" id="stat-paid-orders">0</p>
+          </div>
+          <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl">
+            <span class="text-[10px] text-gray-400 uppercase tracking-widest font-semibold block mb-2">Total Commandes</span>
+            <p class="text-2xl sm:text-3xl font-cinzel font-bold text-blue-400" id="stat-total-orders">0</p>
+          </div>
+        </div>
+
+        <!-- Global Shop Settings Form -->
+        <div class="bg-zinc-900 border border-zinc-800 p-8 rounded-3xl space-y-6">
+          <h3 class="text-lg font-cinzel font-bold text-white border-b border-zinc-800 pb-3">Paramètres de la Plateforme</h3>
+          <form id="settings-form" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <label class="text-xs text-gray-400 block mb-1">Nom du Site</label>
+                <input type="text" name="site_name" class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-gold-500">
+              </div>
+              <div>
+                <label class="text-xs text-gray-400 block mb-1">WhatsApp de Vente</label>
+                <input type="text" name="contact_whatsapp" class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-gold-500">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <label class="text-xs text-gray-400 block mb-1">E-mail de Contact</label>
+                <input type="email" name="contact_email" class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-gold-500">
+              </div>
+              <div>
+                <label class="text-xs text-gray-400 block mb-1">Devise de Vente</label>
+                <input type="text" name="currency_symbol" class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-gold-500">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <label class="text-xs text-gray-400 block mb-1">Prix de base (FCFA)</label>
+                <input type="number" name="price_fcfa" class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-gold-500">
+              </div>
+              <div>
+                <label class="text-xs text-gray-400 block mb-1">Prix Promotionnel (FCFA)</label>
+                <input type="number" name="promo_price_fcfa" class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-gold-500">
+              </div>
+            </div>
+
+            <button type="submit" class="bg-gold-600 hover:bg-gold-500 text-black font-extrabold uppercase text-xs px-6 py-3 rounded-xl transition">
+              Enregistrer les Paramètres
+            </button>
+          </form>
+          <div id="settings-msg" class="hidden text-xs text-green-400 font-semibold text-center"></div>
+        </div>
+      </div>
+
+      <!-- TAB 2: ORDER MANAGEMENT -->
+      <div id="tab-orders" class="tab-content hidden space-y-6">
+        <h2 class="text-2xl font-cinzel font-bold text-white">Gestion des Commandes Clients</h2>
+
+        <div class="bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-gray-300">
+              <thead class="bg-black text-gray-400 uppercase text-[10px] tracking-wider border-b border-zinc-800">
+                <tr>
+                  <th class="p-4">Cmd #</th>
+                  <th class="p-4">Client</th>
+                  <th class="p-4">WhatsApp / Pays</th>
+                  <th class="p-4">Options</th>
+                  <th class="p-4">Total</th>
+                  <th class="p-4">Statut Cmd</th>
+                  <th class="p-4">Paiement</th>
+                  <th class="p-4">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="orders-table-body">
+                <!-- Dynamic orders will load here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: PRODUCT MANAGEMENT -->
+      <div id="tab-product" class="tab-content hidden space-y-6">
+        <h2 class="text-2xl font-cinzel font-bold text-white">Gestion du Produit</h2>
+
+        <div class="bg-zinc-900 border border-zinc-800 p-8 rounded-3xl space-y-6">
+          <form id="product-form" class="space-y-4">
+            <div>
+              <label class="text-xs text-gray-400 block mb-1">Titre de l'article</label>
+              <input type="text" id="prod-title" required class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-gold-500">
+            </div>
+            <div>
+              <label class="text-xs text-gray-400 block mb-1">Description marketing du produit</label>
+              <textarea id="prod-desc" rows="4" class="w-full bg-black border border-zinc-800 rounded-xl p-4 text-xs focus:outline-none focus:border-gold-500"></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <label class="text-xs text-gray-400 block mb-1">Prix de Référence (Haut de gamme)</label>
+                <input type="number" step="0.01" id="prod-price" class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-gold-500">
+              </div>
+              <div>
+                <label class="text-xs text-gray-400 block mb-1">Prix Promo</label>
+                <input type="number" step="0.01" id="prod-promo" class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-gold-500">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <label class="text-xs text-gray-400 block mb-1">Tailles disponibles (Séparées par des virgules)</label>
+                <input type="text" id="prod-sizes" class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-gold-500" placeholder="54,56,58,60">
+              </div>
+              <div>
+                <label class="text-xs text-gray-400 block mb-1">Couleurs disponibles (Séparées par des virgules)</label>
+                <input type="text" id="prod-colors" class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-gold-500" placeholder="Or,Noir,Argent">
+              </div>
+            </div>
+
+            <div>
+              <label class="text-xs text-gray-400 block mb-1">URLs Photos HD (Séparées par des virgules)</label>
+              <input type="text" id="prod-images" class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-gold-500">
+            </div>
+
+            <button type="submit" class="bg-gold-600 hover:bg-gold-500 text-black font-extrabold uppercase text-xs px-6 py-3 rounded-xl transition">
+              Enregistrer les Modifications du Produit
+            </button>
+          </form>
+          <div id="product-msg" class="hidden text-xs text-green-400 font-semibold text-center"></div>
+        </div>
+      </div>
+
+      <!-- TAB 4: TESTIMONIALS MODERATION -->
+      <div id="tab-testimonials" class="tab-content hidden space-y-6">
+        <h2 class="text-2xl font-cinzel font-bold text-white">Modération des Avis Clients</h2>
+
+        <div class="bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-gray-300">
+              <thead class="bg-black text-gray-400 uppercase text-[10px] tracking-wider border-b border-zinc-800">
+                <tr>
+                  <th class="p-4">Avatar / Nom</th>
+                  <th class="p-4">Note</th>
+                  <th class="p-4">Commentaire</th>
+                  <th class="p-4">Statut actuel</th>
+                  <th class="p-4">Actions de Modération</th>
+                </tr>
+              </thead>
+              <tbody id="testimonials-table-body">
+                <!-- Dynamic loading -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 5: CODES PROMOTIONS -->
+      <div id="tab-promotions" class="tab-content hidden space-y-6">
+        <div class="flex justify-between items-center">
+          <h2 class="text-2xl font-cinzel font-bold text-white">Codes Promotionnels Actifs</h2>
+          <button onclick="togglePromoModal(true)" class="bg-gold-600 hover:bg-gold-500 text-black font-bold uppercase text-xs px-4 py-2 rounded-lg transition">
+            + Ajouter un Code
+          </button>
+        </div>
+
+        <div class="bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-gray-300">
+              <thead class="bg-black text-gray-400 uppercase text-[10px] tracking-wider border-b border-zinc-800">
+                <tr>
+                  <th class="p-4">Code Promo</th>
+                  <th class="p-4">Réduction %</th>
+                  <th class="p-4">Actif</th>
+                  <th class="p-4">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="promotions-table-body">
+                <!-- Dynamic loading -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Add Promo Modal -->
+        <div id="promo-modal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div class="bg-zinc-900 border border-gold-600/30 p-8 rounded-3xl max-w-sm w-full space-y-4">
+            <h3 class="text-lg font-cinzel font-bold text-white">Nouveau Code Promo</h3>
+            <form id="promo-form" class="space-y-4">
+              <div>
+                <label class="text-[10px] text-gray-400 block mb-1 uppercase">Code (Ex: CHANCE30)</label>
+                <input type="text" id="promo-code" required class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-gold-500 uppercase">
+              </div>
+              <div>
+                <label class="text-[10px] text-gray-400 block mb-1 uppercase">Pourcentage de réduction</label>
+                <input type="number" id="promo-percent" required class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-gold-500">
+              </div>
+              <div>
+                <label class="text-[10px] text-gray-400 block mb-1 uppercase">Actif d'emblée</label>
+                <select id="promo-active" class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-gold-500">
+                  <option value="1">Oui</option>
+                  <option value="0">Non</option>
+                </select>
+              </div>
+              <div class="flex gap-2">
+                <button type="submit" class="flex-grow bg-gold-600 hover:bg-gold-500 text-black font-bold uppercase text-xs py-3 rounded-xl transition">Créer</button>
+                <button type="button" onclick="togglePromoModal(false)" class="flex-grow bg-zinc-800 hover:bg-zinc-700 text-white font-bold uppercase text-xs py-3 rounded-xl transition">Annuler</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Admin JS logic -->
+  <script>
+    function escapeHTML(str) {
+      if (typeof str !== 'string') return str;
+      return str.replace(/[&<>'"]/g,
+        tag => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          "'": '&#39;',
+          '"': '&quot;'
+        }[tag] || tag)
+      );
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      checkAdminSession();
+    });
+
+    function checkAdminSession() {
+      fetch("/api/admin/check")
+        .then(res => res.json())
+        .then(data => {
+          if (data.loggedIn) {
+            document.getElementById("login-overlay").classList.add("hidden");
+            document.getElementById("admin-app").classList.remove("hidden");
+            document.getElementById("admin-user-display").textContent = data.username;
+            loadStatsAndSettings();
+          } else {
+            document.getElementById("login-overlay").classList.remove("hidden");
+            document.getElementById("admin-app").classList.add("hidden");
+          }
+        });
+    }
+
+    // Login logic
+    const loginForm = document.getElementById("login-form");
+    if (loginForm) {
+      loginForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+        const errBox = document.getElementById("login-error");
+
+        fetch("/api/admin/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            checkAdminSession();
+          } else {
+            errBox.classList.remove("hidden");
+            errBox.textContent = data.error || "Une erreur est survenue.";
+          }
+        })
+        .catch(() => {
+          errBox.classList.remove("hidden");
+          errBox.textContent = "Erreur de connexion serveur.";
+        });
+      });
+    }
+
+    function logout() {
+      fetch("/api/admin/logout", { method: "POST" })
+        .then(() => checkAdminSession());
+    }
+
+    // Navigation Tabs
+    function switchTab(tabId) {
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.add("hidden"));
+      document.getElementById(tabId).classList.remove("hidden");
+
+      // Highlight active sidebar btn
+      document.querySelectorAll(".tab-btn").forEach(b => {
+        b.className = "tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-gray-400 hover:text-white hover:bg-zinc-900 text-left";
+      });
+      event.currentTarget.className = "tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-gold-500 bg-gold-950/20 border-l-4 border-gold-500 text-left";
+
+      // Load specific tab data
+      if (tabId === 'tab-stats') loadStatsAndSettings();
+      if (tabId === 'tab-orders') loadOrders();
+      if (tabId === 'tab-product') loadProductDetails();
+      if (tabId === 'tab-testimonials') loadTestimonials();
+      if (tabId === 'tab-promotions') loadPromotions();
+    }
+
+    // Tab stats loading
+    function loadStatsAndSettings() {
+      fetch("/api/admin/stats")
+        .then(res => res.json())
+        .then(stats => {
+          document.getElementById("stat-revenue").textContent = (stats.totalRevenue || 0).toLocaleString('fr-FR') + " FCFA";
+          document.getElementById("stat-sold").textContent = stats.ringsSold || 0;
+          document.getElementById("stat-paid-orders").textContent = stats.paidOrders || 0;
+          document.getElementById("stat-total-orders").textContent = stats.totalOrders || 0;
+        });
+
+      // Load Settings Form values
+      fetch("/api/settings")
+        .then(res => res.json())
+        .then(settings => {
+          const form = document.getElementById("settings-form");
+          for (let key in settings) {
+            if (form.elements[key]) {
+              form.elements[key].value = settings[key];
+            }
+          }
+        });
+    }
+
+    // Update settings form submission
+    const settingsForm = document.getElementById("settings-form");
+    if (settingsForm) {
+      settingsForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const data = {};
+        const formData = new FormData(settingsForm);
+        formData.forEach((value, key) => data[key] = value);
+
+        fetch("/api/admin/settings", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        })
+        .then(res => res.json())
+        .then(res => {
+          const msg = document.getElementById("settings-msg");
+          msg.classList.remove("hidden");
+          if (res.success) {
+            msg.textContent = "Paramètres mis à jour avec succès !";
+            loadStatsAndSettings();
+          } else {
+            msg.textContent = "Erreur lors de la mise à jour.";
+          }
+        });
+      });
+    }
+
+    // Load Orders List
+    function loadOrders() {
+      fetch("/api/admin/orders")
+        .then(res => res.json())
+        .then(orders => {
+          const tbody = document.getElementById("orders-table-body");
+          tbody.innerHTML = '';
+          orders.forEach(o => {
+            const tr = document.createElement("tr");
+            tr.className = "border-b border-zinc-900 hover:bg-zinc-900/40 transition";
+
+            tr.innerHTML = `
+              <td class="p-4 font-bold text-white">#${o.id}</td>
+              <td class="p-4 font-semibold text-white">${escapeHTML(o.customer_name)}<br><span class="text-[10px] text-gray-500">${escapeHTML(o.email)}</span></td>
+              <td class="p-4 font-medium text-gold-400">${escapeHTML(o.whatsapp)}<br><span class="text-[10px] text-gray-500">${escapeHTML(o.country)}, ${escapeHTML(o.city)}</span></td>
+              <td class="p-4 text-gray-400">Couleur: ${escapeHTML(o.color)}<br>Taille: ${escapeHTML(o.size)} / Qté: ${o.quantity}</td>
+              <td class="p-4 font-bold text-white">${o.total_price.toLocaleString('fr-FR')} FCFA</td>
+              <td class="p-4">
+                <select onchange="updateOrderStatus(${o.id}, this, 'status')" class="bg-black text-xs border border-zinc-800 rounded px-2 py-1 focus:outline-none focus:border-gold-500 text-white">
+                  <option value="Reçue" ${o.status === 'Reçue' ? 'selected' : ''}>Reçue</option>
+                  <option value="En cours de préparation" ${o.status === 'En cours de préparation' ? 'selected' : ''}>Préparation</option>
+                  <option value="Expédiée" ${o.status === 'Expédiée' ? 'selected' : ''}>Expédiée</option>
+                  <option value="Livrée" ${o.status === 'Livrée' ? 'selected' : ''}>Livrée</option>
+                </select>
+              </td>
+              <td class="p-4">
+                <select onchange="updateOrderStatus(${o.id}, this, 'payment_status')" class="bg-black text-xs border border-zinc-800 rounded px-2 py-1 focus:outline-none focus:border-gold-500 text-white font-bold">
+                  <option value="En attente de paiement" ${o.payment_status === 'En attente de paiement' ? 'selected' : ''}>En attente</option>
+                  <option value="Payé" ${o.payment_status === 'Payé' ? 'selected' : ''} class="text-green-400">Payé</option>
+                  <option value="Échoué" ${o.payment_status === 'Échoué' ? 'selected' : ''} class="text-red-400">Échoué</option>
+                </select>
+              </td>
+              <td class="p-4 flex gap-2">
+                <button onclick="deleteOrder(${o.id})" class="text-red-500 hover:text-red-400 text-sm"><i class="fa-solid fa-trash"></i></button>
+              </td>
+            `;
+            tbody.appendChild(tr);
+          });
+        });
+    }
+
+    function updateOrderStatus(id, selectEl, type) {
+      let statusValue, paymentValue;
+      if (type === 'status') {
+        statusValue = selectEl.value;
+        paymentValue = selectEl.closest("tr").querySelector("td:nth-child(7) select").value;
+      } else {
+        paymentValue = selectEl.value;
+        statusValue = selectEl.closest("tr").querySelector("td:nth-child(6) select").value;
+      }
+
+      fetch(`/api/admin/orders/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: statusValue, payment_status: paymentValue })
+      })
+      .then(res => res.json())
+      .then(res => {
+        if(res.success) {
+          // Status updated!
+        }
+      });
+    }
+
+    function deleteOrder(id) {
+      if(!confirm("Voulez-vous vraiment supprimer cette commande ?")) return;
+      fetch(`/api/admin/orders/${id}`, { method: "DELETE" })
+        .then(() => loadOrders());
+    }
+
+    // Product form details loading
+    function loadProductDetails() {
+      fetch("/api/admin/product")
+        .then(res => res.json())
+        .then(p => {
+          document.getElementById("prod-title").value = p.title;
+          document.getElementById("prod-desc").value = p.description;
+          document.getElementById("prod-price").value = p.price;
+          document.getElementById("prod-promo").value = p.promo_price;
+          document.getElementById("prod-sizes").value = p.sizes;
+          document.getElementById("prod-colors").value = p.colors;
+          document.getElementById("prod-images").value = p.images;
+        });
+    }
+
+    const productForm = document.getElementById("product-form");
+    if (productForm) {
+      productForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const title = document.getElementById("prod-title").value;
+        const description = document.getElementById("prod-desc").value;
+        const price = document.getElementById("prod-price").value;
+        const promo_price = document.getElementById("prod-promo").value;
+        const sizes = document.getElementById("prod-sizes").value;
+        const colors = document.getElementById("prod-colors").value;
+        const images = document.getElementById("prod-images").value;
+
+        fetch("/api/admin/product", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, description, price, promo_price, sizes, colors, images })
+        })
+        .then(res => res.json())
+        .then(res => {
+          const msg = document.getElementById("product-msg");
+          msg.classList.remove("hidden");
+          if (res.success) {
+            msg.textContent = "Fiche Produit enregistrée avec succès !";
+            loadProductDetails();
+          } else {
+            msg.textContent = "Erreur de mise à jour.";
+          }
+        });
+      });
+    }
+
+    // Testimonials Moderation
+    function loadTestimonials() {
+      fetch("/api/admin/testimonials")
+        .then(res => res.json())
+        .then(testimonials => {
+          window.adminTestimonials = testimonials;
+          const tbody = document.getElementById("testimonials-table-body");
+          tbody.innerHTML = '';
+          testimonials.forEach(t => {
+            const tr = document.createElement("tr");
+            tr.className = "border-b border-zinc-900 hover:bg-zinc-900/40 transition";
+            tr.innerHTML = `
+              <td class="p-4 flex items-center gap-3">
+                <img src="${escapeHTML(t.avatar)}" class="w-8 h-8 rounded-full border border-gold-500/10">
+                <span class="font-bold text-white">${escapeHTML(t.name)}</span>
+              </td>
+              <td class="p-4 text-gold-500 font-bold">${"★".repeat(t.rating)}</td>
+              <td class="p-4 text-gray-400 italic">"${escapeHTML(t.comment)}"</td>
+              <td class="p-4 font-semibold ${t.status === 'active' ? 'text-green-400' : 'text-yellow-400'}">${escapeHTML(t.status)}</td>
+              <td class="p-4 flex gap-2">
+                <button onclick="approveTestimonial(${t.id}, 'active')" class="bg-green-600/20 text-green-400 px-3 py-1 rounded border border-green-500/20 text-[10px] uppercase font-bold hover:bg-green-600/30">Approuver</button>
+                <button onclick="approveTestimonial(${t.id}, 'pending')" class="bg-yellow-600/20 text-yellow-400 px-3 py-1 rounded border border-yellow-500/20 text-[10px] uppercase font-bold hover:bg-yellow-600/30">Désactiver</button>
+                <button onclick="deleteTestimonial(${t.id})" class="text-red-500 hover:text-red-400 p-1"><i class="fa-solid fa-trash"></i></button>
+              </td>
+            `;
+            tbody.appendChild(tr);
+          });
+        });
+    }
+
+    function approveTestimonial(id, status) {
+      const t = (window.adminTestimonials || []).find(item => item.id === id);
+      if (!t) return;
+      fetch(`/api/admin/testimonials/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: t.name,
+          comment: t.comment,
+          rating: t.rating,
+          status: status
+        })
+      })
+      .then(() => loadTestimonials());
+    }
+
+    function deleteTestimonial(id) {
+      if(!confirm("Supprimer cet avis ?")) return;
+      fetch(`/api/admin/testimonials/${id}`, { method: "DELETE" })
+        .then(() => loadTestimonials());
+    }
+
+    // Promotions Code Coupons
+    function loadPromotions() {
+      fetch("/api/admin/promotions")
+        .then(res => res.json())
+        .then(promos => {
+          window.adminPromotions = promos;
+          const tbody = document.getElementById("promotions-table-body");
+          tbody.innerHTML = '';
+          promos.forEach(p => {
+            const tr = document.createElement("tr");
+            tr.className = "border-b border-zinc-900 hover:bg-zinc-900/40 transition";
+            tr.innerHTML = `
+              <td class="p-4 font-bold text-white uppercase">${escapeHTML(p.code)}</td>
+              <td class="p-4 font-bold text-gold-500">${p.discount_percent}%</td>
+              <td class="p-4">
+                <select onchange="updatePromoStatus(${p.id}, this)" class="bg-black text-xs border border-zinc-800 rounded px-2 py-1 text-white">
+                  <option value="1" ${p.active === 1 ? 'selected' : ''}>Oui</option>
+                  <option value="0" ${p.active === 0 ? 'selected' : ''}>Non</option>
+                </select>
+              </td>
+              <td class="p-4">
+                <button onclick="deletePromo(${p.id})" class="text-red-500 hover:text-red-400"><i class="fa-solid fa-trash"></i></button>
+              </td>
+            `;
+            tbody.appendChild(tr);
+          });
+        });
+    }
+
+    function updatePromoStatus(id, selectEl) {
+      const p = (window.adminPromotions || []).find(item => item.id === id);
+      if (!p) return;
+      fetch(`/api/admin/promotions/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: p.code,
+          discount_percent: p.discount_percent,
+          active: parseInt(selectEl.value)
+        })
+      });
+    }
+
+    function deletePromo(id) {
+      if(!confirm("Supprimer ce coupon ?")) return;
+      fetch(`/api/admin/promotions/${id}`, { method: "DELETE" })
+        .then(() => loadPromotions());
+    }
+
+    function togglePromoModal(show) {
+      const modal = document.getElementById("promo-modal");
+      if (show) modal.classList.remove("hidden");
+      else modal.classList.add("hidden");
+    }
+
+    const promoForm = document.getElementById("promo-form");
+    if (promoForm) {
+      promoForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const code = document.getElementById("promo-code").value;
+        const discount_percent = document.getElementById("promo-percent").value;
+        const active = document.getElementById("promo-active").value;
+
+        fetch("/api/admin/promotions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code, discount_percent, active })
+        })
+        .then(res => res.json())
+        .then(res => {
+          if(res.success) {
+            togglePromoModal(false);
+            promoForm.reset();
+            loadPromotions();
+          } else {
+            alert(res.error || "Une erreur est survenue.");
+          }
+        });
+      });
+    }
+
+  </script>
+</body>
+</html>

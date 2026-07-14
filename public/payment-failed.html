@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Échec de Paiement - Mystique Shop</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Montserrat:wght@400;600&display=swap');
+    body { font-family: 'Montserrat', sans-serif; }
+    .font-cinzel { font-family: 'Cinzel', serif; }
+  </style>
+</head>
+<body class="bg-black text-white min-h-screen flex items-center justify-center p-4">
+  <div class="bg-zinc-950 border border-red-500/30 p-8 rounded-3xl max-w-md w-full text-center shadow-2xl relative overflow-hidden">
+    <div class="absolute -top-10 -right-10 w-32 h-32 bg-red-500/10 rounded-full blur-2xl"></div>
+
+    <div class="inline-flex items-center justify-center w-16 h-16 bg-red-500/10 border border-red-500/30 rounded-full text-red-400 text-3xl mb-6">
+      <i class="fa-solid fa-circle-xmark"></i>
+    </div>
+
+    <h2 class="text-3xl font-cinzel font-bold text-white mb-2">Échec de Paiement</h2>
+    <p class="text-xs text-gray-400 mb-6">La transaction n'a pas pu être validée par la passerelle de paiement.</p>
+
+    <div class="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 text-left space-y-3 mb-6">
+      <div class="flex justify-between text-xs">
+        <span class="text-gray-400">Numéro de commande concerné :</span>
+        <span class="font-bold text-white" id="order-id-label">#--</span>
+      </div>
+      <div class="flex justify-between text-xs">
+        <span class="text-gray-400">Statut de la transaction :</span>
+        <span class="bg-red-500/10 text-red-400 px-2 py-0.5 rounded text-[10px] uppercase font-bold">Échoué / Rejeté</span>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <a href="/#commander" class="block w-full bg-gradient-to-r from-gold-600 to-gold-500 hover:from-gold-500 hover:to-gold-400 text-black font-extrabold uppercase text-xs py-3.5 rounded-xl transition shadow-lg">
+        Réessayer le paiement
+      </a>
+      <a href="/" class="block w-full bg-zinc-900 hover:bg-zinc-800 text-gray-300 font-bold text-xs py-3.5 rounded-xl transition">
+        Retourner à la page d'accueil
+      </a>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const orderId = urlParams.get("orderId") || "--";
+      document.getElementById("order-id-label").textContent = "#" + orderId;
+    });
+  </script>
+</body>
+</html>
