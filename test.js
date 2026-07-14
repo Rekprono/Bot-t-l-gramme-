@@ -100,4 +100,32 @@ describe('Mystique Shop Integration Tests', () => {
       });
   });
 
+  it('should submit an order with MoneyFusion and return WhatsApp redirect link', (done) => {
+    request(app)
+      .post('/api/orders/create')
+      .send({
+        customer_name: "Test WhatsApp User",
+        whatsapp: "+22964044423",
+        email: "test_wa@example.com",
+        country: "Bénin",
+        city: "Cotonou",
+        address: "Zongo, Cotonou",
+        quantity: 1,
+        color: "Or",
+        size: "54",
+        comment: "Test redirect to WhatsApp",
+        payment_method: "moneyfusion"
+      })
+      .expect(200)
+      .expect('Content-Type', /json/)
+      .end((err, res) => {
+        if (err) return done(err);
+        assert.strictEqual(res.body.success, true);
+        assert.strictEqual(res.body.payment_required, true);
+        assert(res.body.payment_url.startsWith('https://wa.me/22964044423'));
+        assert(res.body.payment_url.includes('MoneyFusion%20Pay'));
+        done();
+      });
+  });
+
 });

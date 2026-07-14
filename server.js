@@ -200,16 +200,22 @@ app.post('/api/orders/create', (req, res) => {
           console.log(`[NOTIFICATION OUTBOX - WHATSAPP] To: ${whatsapp}, +229 64 04 44 23`);
           console.log(`Message: Bonjour, la commande #${orderId} de ${customer_name} (${whatsapp}) a été enregistrée. Produit: Bague Mystique de Richesse, Quantité: ${quantity}, Couleur: ${color}, Taille: ${size}. Statut de paiement: ${payment_status}.`);
 
-          // If moneyfusion is selected, simulate payment initiation URL
+          // If moneyfusion is selected, redirect to WhatsApp for payment as requested
           if (payment_method === 'moneyfusion') {
-            // Initiate a dummy/simulation url or real FusionPay URL
-            const paymentUrl = `/pay/moneyfusion/${orderId}?amount=${finalPrice}`;
+            const encodedMsg = encodeURIComponent(
+              `Bonjour, je souhaite finaliser le paiement de ma commande #${orderId} de la Bague Mystique de Richesse via MoneyFusion Pay.\n` +
+              `Nom: ${customer_name}\n` +
+              `Téléphone: ${whatsapp}\n` +
+              `Article: Bague Mystique (${quantity}x, ${color}, Taille ${size})\n` +
+              `Total: ${finalPrice} FCFA.`
+            );
+            const paymentUrl = `https://wa.me/22964044423?text=${encodedMsg}`;
             return res.json({
               success: true,
               order_id: orderId,
               payment_required: true,
               payment_url: paymentUrl,
-              message: "Commande créée ! Redirection vers la plateforme de paiement MoneyFusion Pay..."
+              message: "Commande créée ! Redirection vers WhatsApp pour effectuer le paiement..."
             });
           }
 
