@@ -66,9 +66,9 @@
           .then(res => res.json())
           .then(order => {
             if (order && !order.error) {
-              const method = order.payment_method === 'maketou' ? 'Maketou Pay (Carte/Momo)' : 'MoneyFusion Pay (WhatsApp)';
+              const method = 'Maketou Pay (Carte/Momo)';
               document.getElementById("pay-method-label").textContent = method;
-              document.getElementById("success-desc").textContent = `Votre paiement a été validé avec succès par la plateforme ${order.payment_method === 'maketou' ? 'Maketou' : 'MoneyFusion'} Pay.`;
+              document.getElementById("success-desc").textContent = `Votre paiement a été validé avec succès par la plateforme Maketou Pay.`;
               document.getElementById("status-label").textContent = order.status || "En cours de préparation";
             }
           })
