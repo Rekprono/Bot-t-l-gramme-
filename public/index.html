@@ -831,7 +831,13 @@
         const size = document.getElementById("order-size") ? document.getElementById("order-size").value : "54";
         const comment = document.getElementById("order-comment") ? document.getElementById("order-comment").value : "";
         const promo_code = document.getElementById("coupon-code") ? document.getElementById("coupon-code").value : "";
-        const payment_method = "maketou"; // Forced Direct Maketou Pay checkout flow
+        const payment_method = "maketou"; // Use Maketou Pay automated checkout flow to accept real, live payments
+
+        // Show loading state on submit button
+        const submitBtn = orderForm.querySelector("button[type='submit']");
+        const originalBtnHtml = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Traitement en cours...`;
 
         fetch("/api/orders/create", {
           method: "POST",
@@ -840,19 +846,31 @@
             customer_name, whatsapp, email, country, city, address, quantity, color, size, comment, promo_code, payment_method
           })
         })
-        .then(res => res.json())
+        .then(res => {
+          if (!res.ok) {
+            return res.json().then(err => { throw new Error(err.error || "Erreur inconnue"); });
+          }
+          return res.json();
+        })
         .then(data => {
           if (data.success) {
             if (data.payment_required) {
-              // Redirect directly to payment simulator or real url
+              // Redirect directly to live checkout or live payment coordinator
               window.location.href = data.payment_url;
             } else {
-              // Direct cash on delivery success
-              window.location.href = `/payment-success.html?orderId=${data.order_id}&cash=true`;
+              // Direct success
+              window.location.href = `/payment-success.html?orderId=${data.order_id}`;
             }
           } else {
-            alert("Erreur lors de la commande : " + data.error);
+            alert("Erreur lors de la commande : " + (data.error || "Une erreur est survenue."));
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnHtml;
           }
+        })
+        .catch(err => {
+          alert("Erreur lors de la commande : " + err.message);
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnHtml;
         });
       });
     }
