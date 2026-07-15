@@ -1,7 +1,15 @@
-
-> app@1.0.0 start
-> node server.js
-
+◇ injected env (1) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
 Default settings seeded!
 [Mystique Shop Server] running on http://localhost:3000
-Terminated
+[NOTIFICATION OUTBOX - EMAIL] To: mathieu.g@example.com, dah1bossou@gmail.com
+Subject: Confirmation de Commande #11 - Mystique Shop
+Body: Bonjour Mathieu Gbaguidi, votre commande pour la Bague Mystique de Richesse (#11) a bien été enregistrée ! Quantité: 1, Couleur: Or, Taille: 54. Total: 25000 FCFA.
+[NOTIFICATION OUTBOX - WHATSAPP] To: +229 64 04 44 23, +229 64 04 44 23
+Message: Bonjour, la commande #11 de Mathieu Gbaguidi (+229 64 04 44 23) a été enregistrée. Produit: Bague Mystique de Richesse, Quantité: 1, Couleur: Or, Taille: 54. Statut de paiement: En attente de paiement (En ligne).
+[MAKETOU API ATTEMPT] Requesting payment URL from https://api.maketou.com with Key: msk_7698b2...
+[MAKETOU WEBHOOK SIMULATED] Order 11 updated to Payé via moov. Transaction ID: MT-ZMTG7MX1
+[NOTIFICATION OUTBOX - PAID EMAIL] To: mathieu.g@example.com, dah1bossou@gmail.com
+Subject: Paiement Confirmé via Maketou - Commande #11 - Mystique Shop
+Body: Bonjour Mathieu Gbaguidi, votre paiement en ligne de 25000 FCFA via Maketou a été validé avec succès ! Votre Bague Mystique de Richesse est désormais en cours de préparation.
+[NOTIFICATION OUTBOX - PAID WHATSAPP] To: +229 64 04 44 23, +229 64 04 44 23
+Message: Paiement de 25000 FCFA validé via Maketou pour la commande #11. Votre bague mystique est en préparation !

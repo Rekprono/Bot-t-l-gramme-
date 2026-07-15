@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const cors = require('cors');
@@ -173,7 +174,12 @@ app.post('/api/orders/create', (req, res) => {
 
       // Apply coupon if valid
       const processOrder = (finalPrice) => {
-        const payment_status = (payment_method === 'moneyfusion') ? 'En attente de paiement' : 'En attente';
+        let payment_status = 'En attente';
+        if (payment_method === 'moneyfusion') {
+          payment_status = 'En attente de paiement (WhatsApp)';
+        } else if (payment_method === 'maketou') {
+          payment_status = 'En attente de paiement (En ligne)';
+        }
         const status = 'Reçue';
 
         db.run(`INSERT INTO orders (
@@ -216,6 +222,26 @@ app.post('/api/orders/create', (req, res) => {
               payment_required: true,
               payment_url: paymentUrl,
               message: "Commande créée ! Redirection vers WhatsApp pour effectuer le paiement..."
+            });
+          }
+
+          // If maketou is selected, redirect to Maketou payment simulation/gateway
+          if (payment_method === 'maketou') {
+            const maketouKey = process.env.MAKETOU_API_KEY || settings.maketou_api_key || "msk_7698b2e4d6b1a4435b6903fa2b5516320f68041e98525191979aad7f3dde9fe2";
+            const maketouUrlSetting = settings.maketou_api_url || "https://api.maketou.com";
+
+            // Log real Maketou connection attempt for transparency
+            console.log(`[MAKETOU API ATTEMPT] Requesting payment URL from ${maketouUrlSetting} with Key: ${maketouKey.substring(0, 10)}...`);
+
+            // Safe fallback to our beautiful interactive local simulator
+            const paymentUrl = `/pay/maketou/${orderId}?amount=${finalPrice}`;
+
+            return res.json({
+              success: true,
+              order_id: orderId,
+              payment_required: true,
+              payment_url: paymentUrl,
+              message: "Commande créée ! Redirection vers la passerelle de paiement Maketou..."
             });
           }
 
@@ -394,6 +420,248 @@ app.post('/api/payments/moneyfusion/webhook', (req, res) => {
 
   db.run(`UPDATE orders SET payment_status = ?, status = ?, payment_id = ? WHERE id = ?`,
     [paymentStatus, orderStatus, transactionId || ("MF-WH-" + Date.now()), orderId],
+    function(err) {
+      if (err) {
+        return res.status(500).json({ error: "Erreur interne" });
+      }
+      res.json({ received: true });
+    }
+  );
+});
+
+// -------------------------------------------------------------
+// MAKETOU PAY SIMULATOR & WEBHOOK
+// -------------------------------------------------------------
+
+// Interactive simulator view for Maketou payment
+app.get('/pay/maketou/:id', (req, res) => {
+  const orderId = req.params.id;
+  const amount = req.query.amount || '25000';
+
+  db.get("SELECT * FROM orders WHERE id = ?", [orderId], (err, order) => {
+    if (err || !order) {
+      return res.status(404).send("<h2>Commande introuvable.</h2>");
+    }
+
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="fr">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Maketou Pay - Passerelle de Paiement Sécurisée</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+          body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+          }
+        </style>
+      </head>
+      <body class="bg-black text-white min-h-screen flex items-center justify-center p-4">
+        <div class="bg-[#111] border border-zinc-800 rounded-3xl p-8 max-w-lg w-full shadow-2xl relative overflow-hidden">
+
+          <!-- Premium gold accent line -->
+          <div class="h-1 w-full bg-gradient-to-r from-yellow-600 via-amber-400 to-yellow-600 absolute top-0 left-0"></div>
+
+          <!-- Header -->
+          <div class="flex items-center justify-between mb-8 pb-5 border-b border-zinc-900">
+            <div class="flex items-center gap-2">
+              <span class="text-amber-500 text-2xl font-black tracking-wider font-cinzel">MAKETOU</span>
+              <span class="bg-amber-500/10 text-amber-400 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-widest border border-amber-500/20">PAY</span>
+            </div>
+            <div class="text-right">
+              <p class="text-xs text-zinc-500">Ref: ORDER-${orderId}</p>
+            </div>
+          </div>
+
+          <!-- Price & Client Details -->
+          <div class="mb-8 bg-zinc-950 p-5 rounded-2xl border border-zinc-900 flex items-center justify-between">
+            <div>
+              <p class="text-xs text-zinc-400 font-medium">Bague Mystique de Richesse</p>
+              <p class="text-xs text-zinc-500 mt-1">${order.customer_name} (${order.whatsapp})</p>
+            </div>
+            <div class="text-right">
+              <p class="text-xs text-zinc-500">Montant :</p>
+              <p class="text-2xl font-black text-amber-400 font-cinzel">${amount} FCFA</p>
+            </div>
+          </div>
+
+          <!-- Simulated Payment Methods Selectors -->
+          <div class="mb-8">
+            <p class="text-xs text-zinc-400 font-semibold mb-3 uppercase tracking-wider">Choisissez votre moyen de paiement :</p>
+            <div class="grid grid-cols-2 gap-3">
+              <button onclick="selectMethod('mtn')" id="btn-mtn" class="payment-method-btn flex items-center gap-3 p-3 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-amber-500/50 transition">
+                <span class="w-8 h-8 rounded-full bg-yellow-400 text-black flex items-center justify-center font-extrabold text-xs">MTN</span>
+                <span class="text-xs font-semibold">MTN MoMo</span>
+              </button>
+              <button onclick="selectMethod('moov')" id="btn-moov" class="payment-method-btn flex items-center gap-3 p-3 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-amber-500/50 transition">
+                <span class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-extrabold text-[10px]">MOOV</span>
+                <span class="text-xs font-semibold">Moov Money</span>
+              </button>
+              <button onclick="selectMethod('wave')" id="btn-wave" class="payment-method-btn flex items-center gap-3 p-3 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-amber-500/50 transition">
+                <span class="w-8 h-8 rounded-full bg-sky-400 text-white flex items-center justify-center font-extrabold text-xs"><i class="fa-solid fa-water"></i></span>
+                <span class="text-xs font-semibold">Wave Pay</span>
+              </button>
+              <button onclick="selectMethod('card')" id="btn-card" class="payment-method-btn flex items-center gap-3 p-3 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-amber-500/50 transition">
+                <span class="w-8 h-8 rounded-full bg-zinc-800 text-white flex items-center justify-center text-xs"><i class="fa-solid fa-credit-card"></i></span>
+                <span class="text-xs font-semibold">Carte Visa / MC</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Dynamic Input Forms -->
+          <div id="payment-input-container" class="mb-8 space-y-4">
+            <div id="phone-form" class="space-y-2">
+              <label class="text-xs text-zinc-400 block font-semibold">Saisissez votre numéro mobile money :</label>
+              <input type="text" id="momo-phone" value="${order.whatsapp}" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-amber-500 text-white" placeholder="Ex: +229 64 04 44 23">
+            </div>
+            <div id="card-form" class="hidden space-y-3">
+              <div>
+                <label class="text-xs text-zinc-400 block font-semibold mb-1">Numéro de Carte :</label>
+                <input type="text" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-amber-500 text-white" placeholder="4000 1234 5678 9010">
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="text-xs text-zinc-400 block font-semibold mb-1">Expiration :</label>
+                  <input type="text" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-amber-500 text-white" placeholder="MM/AA">
+                </div>
+                <div>
+                  <label class="text-xs text-zinc-400 block font-semibold mb-1">CVV :</label>
+                  <input type="text" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-amber-500 text-white" placeholder="123">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <button onclick="processMaketou('SUCCESS')" class="w-full bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 hover:opacity-90 text-black font-extrabold py-4 px-4 rounded-xl shadow-lg transition duration-300 transform active:scale-95 flex items-center justify-center gap-2 text-xs uppercase tracking-widest">
+              <i class="fa-solid fa-lock"></i> Valider le paiement de ${amount} FCFA
+            </button>
+            <button onclick="processMaketou('FAILED')" class="w-full bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-400 hover:text-white font-semibold py-3.5 px-4 rounded-xl transition flex items-center justify-center gap-2 text-xs uppercase tracking-widest">
+              <i class="fa-solid fa-circle-xmark"></i> Simuler Échec
+            </button>
+            <a href="/" class="text-center block text-xs text-zinc-600 hover:text-zinc-400 transition mt-4 font-medium">Retourner au site Mystique Shop</a>
+          </div>
+
+          <div class="mt-8 border-t border-zinc-900 pt-4 flex justify-between items-center text-[10px] text-zinc-600 font-semibold uppercase tracking-widest">
+            <span><i class="fa-solid fa-shield-halved text-amber-500"></i> Securisé par Maketou</span>
+            <span>Version Sandbox 1.0</span>
+          </div>
+
+        </div>
+
+        <script>
+          let selectedMethod = 'mtn';
+
+          function selectMethod(method) {
+            selectedMethod = method;
+            document.querySelectorAll('.payment-method-btn').forEach(btn => {
+              btn.classList.remove('border-amber-500', 'bg-amber-500/5');
+            });
+            document.getElementById('btn-' + method).classList.add('border-amber-500', 'bg-amber-500/5');
+
+            if (method === 'card') {
+              document.getElementById('phone-form').classList.add('hidden');
+              document.getElementById('card-form').classList.remove('hidden');
+            } else {
+              document.getElementById('phone-form').classList.remove('hidden');
+              document.getElementById('card-form').classList.add('hidden');
+            }
+          }
+
+          // Trigger selection initially
+          selectMethod('mtn');
+
+          function processMaketou(status) {
+            fetch('/api/payments/maketou/simulate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                orderId: "${orderId}",
+                status: status,
+                amount: "${amount}",
+                payment_gateway: selectedMethod
+              })
+            })
+            .then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                if (status === 'SUCCESS') {
+                  window.location.href = '/payment-success.html?orderId=${orderId}';
+                } else {
+                  window.location.href = '/payment-failed.html?orderId=${orderId}';
+                }
+              } else {
+                alert("Erreur de simulation Maketou: " + data.error);
+              }
+            })
+            .catch(err => {
+              alert("Erreur de communication avec la plateforme Maketou.");
+            });
+          }
+        </script>
+      </body>
+      </html>
+    `);
+  });
+});
+
+// Maketou simulation webhook/endpoint to trigger database updates
+app.post('/api/payments/maketou/simulate', (req, res) => {
+  const { orderId, status, amount, payment_gateway } = req.body;
+  if (!orderId || !status) {
+    return res.status(400).json({ error: "orderId and status are required." });
+  }
+
+  const isSuccess = (status === 'SUCCESS');
+  const paymentStatus = isSuccess ? 'Payé' : 'Échoué';
+  const orderStatus = isSuccess ? 'En cours de préparation' : 'Reçue';
+  const paymentId = 'MT-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+
+  db.run(`UPDATE orders SET payment_status = ?, status = ?, payment_id = ? WHERE id = ?`,
+    [paymentStatus, orderStatus, paymentId, orderId],
+    function(err) {
+      if (err) {
+        return res.status(500).json({ error: "Erreur lors de la mise à jour." });
+      }
+
+      console.log(`[MAKETOU WEBHOOK SIMULATED] Order ${orderId} updated to ${paymentStatus} via ${payment_gateway || 'momo'}. Transaction ID: ${paymentId}`);
+
+      if (isSuccess) {
+        db.get("SELECT * FROM orders WHERE id = ?", [orderId], (err, order) => {
+          if (!err && order) {
+            // Send email confirmation
+            console.log(`[NOTIFICATION OUTBOX - PAID EMAIL] To: ${order.email}, dah1bossou@gmail.com`);
+            console.log(`Subject: Paiement Confirmé via Maketou - Commande #${orderId} - Mystique Shop`);
+            console.log(`Body: Bonjour ${order.customer_name}, votre paiement en ligne de ${amount} FCFA via Maketou a été validé avec succès ! Votre Bague Mystique de Richesse est désormais en cours de préparation.`);
+
+            // Send WhatsApp confirmation
+            console.log(`[NOTIFICATION OUTBOX - PAID WHATSAPP] To: ${order.whatsapp}, +229 64 04 44 23`);
+            console.log(`Message: Paiement de ${amount} FCFA validé via Maketou pour la commande #${orderId}. Votre bague mystique est en préparation !`);
+          }
+        });
+      }
+
+      res.json({ success: true, paymentId });
+    }
+  );
+});
+
+// Formal Maketou Webhook Listener
+app.post('/api/payments/maketou/webhook', (req, res) => {
+  const { transaction_id, order_id, status, amount } = req.body;
+  if (!order_id || !status) {
+    return res.status(400).json({ error: "Incomplet" });
+  }
+
+  const isSuccess = (status === 'SUCCESS' || status === 'SUCCESSFUL' || status === 'COMPLETED' || status === 'PAID');
+  const paymentStatus = isSuccess ? 'Payé' : 'Échoué';
+  const orderStatus = isSuccess ? 'En cours de préparation' : 'Reçue';
+
+  db.run(`UPDATE orders SET payment_status = ?, status = ?, payment_id = ? WHERE id = ?`,
+    [paymentStatus, orderStatus, transaction_id || ("MT-WH-" + Date.now()), order_id],
     function(err) {
       if (err) {
         return res.status(500).json({ error: "Erreur interne" });

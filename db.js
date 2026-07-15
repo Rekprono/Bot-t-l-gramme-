@@ -166,7 +166,9 @@ function initDb() {
         { key: "promo_price_fcfa", value: "25000" }, // Product Promo Price in FCFA
         { key: "shipping_cost", value: "0" }, // Free Shipping
         { key: "moneyfusion_api_url", value: "https://api.moneyfusion.com" },
-        { key: "moneyfusion_merchant_id", value: "MF-MYSTIQUE" }
+        { key: "moneyfusion_merchant_id", value: "MF-MYSTIQUE" },
+        { key: "maketou_api_key", value: "msk_7698b2e4d6b1a4435b6903fa2b5516320f68041e98525191979aad7f3dde9fe2" },
+        { key: "maketou_api_url", value: "https://api.maketou.com" }
       ];
 
       defaultSettings.forEach(s => {
