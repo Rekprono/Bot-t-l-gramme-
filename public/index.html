@@ -350,8 +350,8 @@
         <div class="inline-flex items-center gap-2 bg-gold-950/50 border border-gold-500/30 px-4 py-1.5 rounded-full text-gold-400 text-[10px] font-bold uppercase tracking-widest mb-4">
           <i class="fa-solid fa-bolt"></i> Tunnel de Vente Sécurisé
         </div>
-        <p class="text-3xl sm:text-4xl font-cinzel font-bold text-white">Formulaire de commande</p>
-        <p class="text-xs text-gray-400 mt-2">Profitez de la promotion en cours. Remplissez le formulaire ci-dessous pour sécuriser votre colis.</p>
+        <p class="text-3xl sm:text-4xl font-cinzel font-bold text-white">Finaliser le paiement</p>
+        <p class="text-xs text-gray-400 mt-2">Remplissez vos informations de livraison pour finaliser votre commande sécurisée en ligne.</p>
       </div>
 
       <!-- Pricing Summary Widget -->
@@ -369,18 +369,17 @@
 
       <!-- Order Form -->
       <form id="order-form" class="bg-zinc-950/60 border border-zinc-900 p-8 sm:p-10 rounded-3xl space-y-6">
-        <!-- Coupon container -->
-        <div class="bg-black/40 border border-zinc-800 p-4 rounded-2xl flex items-center gap-3">
-          <div class="flex-grow">
-            <input type="text" id="coupon-code" class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white uppercase focus:outline-none focus:border-gold-500" placeholder="Code Promo (ex: MYSTIQUE15)">
-          </div>
-          <button type="button" onclick="applyCoupon()" class="bg-gold-600 hover:bg-gold-500 text-black font-extrabold uppercase text-xs px-5 py-3 rounded-xl transition">
-            Appliquer
-          </button>
-        </div>
-        <div id="coupon-msg" class="hidden text-xs font-semibold"></div>
+        <!-- Hidden/Default Fields to maintain compatibility with client functions -->
+        <input type="hidden" id="coupon-code" value="">
+        <input type="hidden" id="order-email" value="">
+        <input type="hidden" id="order-city" value="">
+        <input type="hidden" id="order-qty" value="1">
+        <input type="hidden" id="order-color" value="Or">
+        <input type="hidden" id="order-size" value="54">
+        <input type="hidden" id="order-comment" value="">
+        <input type="radio" name="pay_method" value="maketou" checked class="hidden">
 
-        <!-- Identity fields -->
+        <!-- Streamlined Identity fields -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <label class="text-xs text-gray-400 block mb-1 font-semibold">Nom Complet *</label>
@@ -394,83 +393,12 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
-            <label class="text-xs text-gray-400 block mb-1 font-semibold">Adresse Email *</label>
-            <input type="email" id="order-email" required class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-gold-500" placeholder="Ex: dah1bossou@gmail.com">
-          </div>
-          <div>
             <label class="text-xs text-gray-400 block mb-1 font-semibold">Pays *</label>
             <input type="text" id="order-country" required class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-gold-500" placeholder="Ex: Bénin, Côte d'Ivoire">
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div>
-            <label class="text-xs text-gray-400 block mb-1 font-semibold">Ville *</label>
-            <input type="text" id="order-city" required class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-gold-500" placeholder="Ex: Cotonou, Abidjan">
           </div>
           <div>
             <label class="text-xs text-gray-400 block mb-1 font-semibold">Adresse Exacte de Livraison *</label>
             <input type="text" id="order-address" required class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-gold-500" placeholder="Ex: Rue 12, Face pharmacie du centre">
-          </div>
-        </div>
-
-        <!-- Custom Product Options -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-4 border-t border-zinc-900">
-          <div>
-            <label class="text-xs text-gray-400 block mb-1 font-semibold">Quantité *</label>
-            <select id="order-qty" onchange="recalculateTotal()" class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-gold-500">
-              <option value="1">1 Bague</option>
-              <option value="2">2 Bagues (Recommandé)</option>
-              <option value="3">3 Bagues (Famille)</option>
-            </select>
-          </div>
-          <div>
-            <label class="text-xs text-gray-400 block mb-1 font-semibold">Couleur choisie *</label>
-            <select id="order-color" class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-gold-500">
-              <option value="Or">Or Impérial</option>
-              <option value="Noir">Noir Sombre</option>
-              <option value="Argent">Argent Royal</option>
-            </select>
-          </div>
-          <div>
-            <label class="text-xs text-gray-400 block mb-1 font-semibold">Taille choisie *</label>
-            <select id="order-size" class="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-gold-500">
-              <!-- Dynamically populated -->
-            </select>
-          </div>
-        </div>
-
-        <!-- Order Comment -->
-        <div>
-          <label class="text-xs text-gray-400 block mb-1 font-semibold">Commentaire / Instructions supplémentaires</label>
-          <textarea id="order-comment" rows="2" class="w-full bg-black border border-zinc-800 rounded-xl p-4 text-xs text-white focus:outline-none focus:border-gold-500" placeholder="Ex: Appeler avant livraison, etc."></textarea>
-        </div>
-
-        <!-- Payment Methods Choice -->
-        <div class="space-y-3 pt-4 border-t border-zinc-900">
-          <span class="text-xs text-gray-400 block font-semibold">Moyen de paiement sécurisé *</span>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-            <!-- Maketou Payment -->
-            <label class="relative flex items-center gap-3 p-4 bg-black/40 border border-gold-600/30 rounded-xl cursor-pointer hover:border-gold-500 transition">
-              <input type="radio" name="pay_method" value="maketou" checked class="accent-gold-500">
-              <div class="text-xs">
-                <span class="font-bold text-white block text-sm">Paiement Sécurisé en Ligne</span>
-                <span class="text-gray-400 text-[11px]">Payez immédiatement par MTN, Moov, Wave, Carte ou Orange via Maketou.</span>
-              </div>
-              <span class="absolute right-4 text-gold-500 text-xl"><i class="fa-solid fa-credit-card"></i></span>
-            </label>
-
-            <!-- MoneyFusion WhatsApp Payment -->
-            <label class="relative flex items-center gap-3 p-4 bg-black/40 border border-zinc-800 rounded-xl cursor-pointer hover:border-gold-500 transition">
-              <input type="radio" name="pay_method" value="moneyfusion" class="accent-gold-500">
-              <div class="text-xs">
-                <span class="font-bold text-white block text-sm">Paiement Manuel par WhatsApp</span>
-                <span class="text-gray-400 text-[11px]">Enregistrez votre commande et finalisez la transaction directement via WhatsApp.</span>
-              </div>
-              <span class="absolute right-4 text-green-500 text-xl"><i class="fa-brands fa-whatsapp"></i></span>
-            </label>
-
           </div>
         </div>
 
@@ -481,7 +409,7 @@
             <span class="text-3xl font-black text-gold-500" id="final-total-display">25 000 FCFA</span>
           </div>
           <button type="submit" class="w-full sm:w-auto bg-gradient-to-r from-gold-600 to-gold-400 hover:from-gold-500 hover:to-gold-300 text-black font-black uppercase text-sm tracking-widest px-10 py-4 rounded-xl shadow-2xl transition duration-300 transform active:scale-95 flex items-center justify-center gap-2">
-            <i class="fa-solid fa-lock"></i> Finaliser ma commande
+            <i class="fa-solid fa-lock"></i> Finaliser le paiement
           </button>
         </div>
       </form>
@@ -892,16 +820,18 @@
 
         const customer_name = document.getElementById("order-name").value;
         const whatsapp = document.getElementById("order-whatsapp").value;
-        const email = document.getElementById("order-email").value;
         const country = document.getElementById("order-country").value;
-        const city = document.getElementById("order-city").value;
         const address = document.getElementById("order-address").value;
-        const quantity = document.getElementById("order-qty").value;
-        const color = document.getElementById("order-color").value;
-        const size = document.getElementById("order-size").value;
-        const comment = document.getElementById("order-comment").value;
-        const promo_code = document.getElementById("coupon-code").value;
-        const payment_method = document.querySelector('input[name="pay_method"]:checked').value;
+
+        // Optional/Defaulted fields to maintain database structure and compatibility
+        const email = document.getElementById("order-email") ? document.getElementById("order-email").value : "";
+        const city = document.getElementById("order-city") ? document.getElementById("order-city").value : "";
+        const quantity = document.getElementById("order-qty") ? document.getElementById("order-qty").value : "1";
+        const color = document.getElementById("order-color") ? document.getElementById("order-color").value : "Or";
+        const size = document.getElementById("order-size") ? document.getElementById("order-size").value : "54";
+        const comment = document.getElementById("order-comment") ? document.getElementById("order-comment").value : "";
+        const promo_code = document.getElementById("coupon-code") ? document.getElementById("coupon-code").value : "";
+        const payment_method = "maketou"; // Forced Direct Maketou Pay checkout flow
 
         fetch("/api/orders/create", {
           method: "POST",

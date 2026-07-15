@@ -121,7 +121,7 @@ app.post('/api/promo/check', (req, res) => {
 // Track an order
 app.get('/api/orders/track/:id', (req, res) => {
   const orderId = req.params.id;
-  db.get("SELECT id, customer_name, quantity, color, size, total_price, status, payment_status, created_at FROM orders WHERE id = ?", [orderId], (err, order) => {
+  db.get("SELECT id, customer_name, quantity, color, size, total_price, status, payment_status, payment_method, created_at FROM orders WHERE id = ?", [orderId], (err, order) => {
     if (err) {
       return res.status(500).json({ error: "Erreur de base de données." });
     }
@@ -146,12 +146,21 @@ app.post('/api/orders/create', (req, res) => {
     size,
     comment,
     promo_code,
-    payment_method // 'cash' or 'moneyfusion'
+    payment_method
   } = req.body;
 
-  if (!customer_name || !whatsapp || !email || !country || !city || !address || !quantity || !color || !size) {
-    return res.status(400).json({ error: "Veuillez remplir tous les champs obligatoires." });
+  // Streamlined validation: Only customer_name, whatsapp, country, and address are mandatory
+  if (!customer_name || !whatsapp || !country || !address) {
+    return res.status(400).json({ error: "Veuillez remplir les champs obligatoires : Nom, WhatsApp, Pays, Adresse." });
   }
+
+  // Assign defaults for optional/removed fields to maintain compatibility and database structure
+  const qtyVal = parseInt(quantity) || 1;
+  const colorVal = color || "Or";
+  const sizeVal = size || "54";
+  const emailVal = email || "";
+  const cityVal = city || "";
+  const payMethodVal = payment_method || "maketou";
 
   // Get pricing details from DB or settings
   db.get("SELECT price, promo_price FROM products WHERE id = 1", [], (err, product) => {
@@ -170,14 +179,14 @@ app.post('/api/orders/create', (req, res) => {
       // Default calculations (supports FCFA/EUR depending on settings)
       // Check if price in FCFA is configured
       const basePrice = parseFloat(settings.promo_price_fcfa || "25000");
-      let total = basePrice * parseInt(quantity);
+      let total = basePrice * qtyVal;
 
       // Apply coupon if valid
       const processOrder = (finalPrice) => {
         let payment_status = 'En attente';
-        if (payment_method === 'moneyfusion') {
+        if (payMethodVal === 'moneyfusion') {
           payment_status = 'En attente de paiement (WhatsApp)';
-        } else if (payment_method === 'maketou') {
+        } else if (payMethodVal === 'maketou') {
           payment_status = 'En attente de paiement (En ligne)';
         }
         const status = 'Reçue';
@@ -187,8 +196,8 @@ app.post('/api/orders/create', (req, res) => {
           total_price, promo_code, status, payment_status, payment_method, payment_id
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          customer_name, whatsapp, email, country, city, address, parseInt(quantity), color, size, comment || "",
-          finalPrice, promo_code || "", status, payment_status, payment_method || 'moneyfusion', ""
+          customer_name, whatsapp, emailVal, country, cityVal, address, qtyVal, colorVal, sizeVal, comment || "",
+          finalPrice, promo_code || "", status, payment_status, payMethodVal, ""
         ],
         function(err) {
           if (err) {
@@ -199,20 +208,20 @@ app.post('/api/orders/create', (req, res) => {
           const orderId = this.lastID;
 
           // Simulate sending notifications (Email & WhatsApp)
-          console.log(`[NOTIFICATION OUTBOX - EMAIL] To: ${email}, dah1bossou@gmail.com`);
+          console.log(`[NOTIFICATION OUTBOX - EMAIL] To: ${emailVal || 'no-email@example.com'}, dah1bossou@gmail.com`);
           console.log(`Subject: Confirmation de Commande #${orderId} - Mystique Shop`);
-          console.log(`Body: Bonjour ${customer_name}, votre commande pour la Bague Mystique de Richesse (#${orderId}) a bien été enregistrée ! Quantité: ${quantity}, Couleur: ${color}, Taille: ${size}. Total: ${finalPrice} FCFA.`);
+          console.log(`Body: Bonjour ${customer_name}, votre commande pour la Bague Mystique de Richesse (#${orderId}) a bien été enregistrée ! Quantité: ${qtyVal}, Couleur: ${colorVal}, Taille: ${sizeVal}. Total: ${finalPrice} FCFA.`);
 
           console.log(`[NOTIFICATION OUTBOX - WHATSAPP] To: ${whatsapp}, +229 64 04 44 23`);
-          console.log(`Message: Bonjour, la commande #${orderId} de ${customer_name} (${whatsapp}) a été enregistrée. Produit: Bague Mystique de Richesse, Quantité: ${quantity}, Couleur: ${color}, Taille: ${size}. Statut de paiement: ${payment_status}.`);
+          console.log(`Message: Bonjour, la commande #${orderId} de ${customer_name} (${whatsapp}) a été enregistrée. Produit: Bague Mystique de Richesse, Quantité: ${qtyVal}, Couleur: ${colorVal}, Taille: ${sizeVal}. Statut de paiement: ${payment_status}.`);
 
           // If moneyfusion is selected, redirect to WhatsApp for payment as requested
-          if (payment_method === 'moneyfusion') {
+          if (payMethodVal === 'moneyfusion') {
             const encodedMsg = encodeURIComponent(
               `Bonjour, je souhaite finaliser le paiement de ma commande #${orderId} de la Bague Mystique de Richesse.\n` +
               `Nom: ${customer_name}\n` +
               `Téléphone: ${whatsapp}\n` +
-              `Article: Bague Mystique (${quantity}x, ${color}, Taille ${size})\n` +
+              `Article: Bague Mystique (${qtyVal}x, ${colorVal}, Taille ${sizeVal})\n` +
               `Total: ${finalPrice} FCFA.`
             );
             const paymentUrl = `https://wa.me/22964044423?text=${encodedMsg}`;
@@ -226,7 +235,7 @@ app.post('/api/orders/create', (req, res) => {
           }
 
           // If maketou is selected, redirect to Maketou payment simulation/gateway
-          if (payment_method === 'maketou') {
+          if (payMethodVal === 'maketou') {
             const maketouKey = process.env.MAKETOU_API_KEY || settings.maketou_api_key || "msk_7698b2e4d6b1a4435b6903fa2b5516320f68041e98525191979aad7f3dde9fe2";
             const maketouUrlSetting = settings.maketou_api_url || "https://api.maketou.com";
 

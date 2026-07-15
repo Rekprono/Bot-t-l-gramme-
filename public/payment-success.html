@@ -51,15 +51,30 @@
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const urlParams = new URLSearchParams(window.location.search);
-      const orderId = urlParams.get("orderId") || "--";
+      const orderId = urlParams.get("orderId") || "";
       const isCash = urlParams.get("cash") === "true";
 
-      document.getElementById("order-id-label").textContent = "#" + orderId;
+      document.getElementById("order-id-label").textContent = "#" + (orderId || "--");
 
-      if(isCash) {
+      if (isCash) {
         document.getElementById("success-desc").textContent = "Votre commande avec paiement à la livraison a été enregistrée avec succès ! Nous vous contacterons via WhatsApp pour confirmation avant expédition.";
         document.getElementById("pay-method-label").textContent = "Paiement à la livraison";
         document.getElementById("status-label").textContent = "En attente de confirmation";
+      } else if (orderId) {
+        // Fetch real order status dynamically to adapt the UI
+        fetch(`/api/orders/track/${orderId}`)
+          .then(res => res.json())
+          .then(order => {
+            if (order && !order.error) {
+              const method = order.payment_method === 'maketou' ? 'Maketou Pay (Carte/Momo)' : 'MoneyFusion Pay (WhatsApp)';
+              document.getElementById("pay-method-label").textContent = method;
+              document.getElementById("success-desc").textContent = `Votre paiement a été validé avec succès par la plateforme ${order.payment_method === 'maketou' ? 'Maketou' : 'MoneyFusion'} Pay.`;
+              document.getElementById("status-label").textContent = order.status || "En cours de préparation";
+            }
+          })
+          .catch(err => {
+            console.error("Failed to load order details", err);
+          });
       }
 
       // Pre-fill Support link

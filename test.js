@@ -73,48 +73,14 @@ describe('Mystique Shop Integration Tests', () => {
       });
   });
 
-  it('should submit an order successfully', (done) => {
+  it('should submit a simplified order successfully and default to Maketou redirection', (done) => {
     request(app)
       .post('/api/orders/create')
       .send({
-        customer_name: "Test User",
-        whatsapp: "+22912345678",
-        email: "test@example.com",
+        customer_name: "Simplice Gnanhoué",
+        whatsapp: "+22995959595",
         country: "Bénin",
-        city: "Cotonou",
-        address: "Zongo, Cotonou",
-        quantity: 1,
-        color: "Or",
-        size: "54",
-        comment: "Vite s'il vous plait",
-        payment_method: "cash"
-      })
-      .expect(200)
-      .expect('Content-Type', /json/)
-      .end((err, res) => {
-        if (err) return done(err);
-        assert.strictEqual(res.body.success, true);
-        assert.strictEqual(res.body.payment_required, false);
-        assert(res.body.order_id);
-        done();
-      });
-  });
-
-  it('should submit an order with MoneyFusion and return WhatsApp redirect link', (done) => {
-    request(app)
-      .post('/api/orders/create')
-      .send({
-        customer_name: "Test WhatsApp User",
-        whatsapp: "+22964044423",
-        email: "test_wa@example.com",
-        country: "Bénin",
-        city: "Cotonou",
-        address: "Zongo, Cotonou",
-        quantity: 1,
-        color: "Or",
-        size: "54",
-        comment: "Test redirect to WhatsApp",
-        payment_method: "moneyfusion"
+        address: "Ménontin, Cotonou"
       })
       .expect(200)
       .expect('Content-Type', /json/)
@@ -122,9 +88,68 @@ describe('Mystique Shop Integration Tests', () => {
         if (err) return done(err);
         assert.strictEqual(res.body.success, true);
         assert.strictEqual(res.body.payment_required, true);
-        assert(res.body.payment_url.startsWith('https://wa.me/22964044423'));
-        assert(res.body.payment_url.includes('Bague%20Mystique'));
+        assert(res.body.payment_url.startsWith('/pay/maketou/'));
+        assert(res.body.payment_url.includes('amount=25000'));
+        assert(res.body.order_id);
         done();
+      });
+  });
+
+  it('should reject order if any of the 4 required fields are missing', (done) => {
+    request(app)
+      .post('/api/orders/create')
+      .send({
+        customer_name: "Simplice Gnanhoué",
+        whatsapp: "+22995959595"
+        // missing country and address
+      })
+      .expect(400)
+      .expect('Content-Type', /json/)
+      .end((err, res) => {
+        if (err) return done(err);
+        assert.strictEqual(res.body.success, undefined);
+        assert(res.body.error.includes("obligatoires"));
+        done();
+      });
+  });
+
+  it('should simulate successful Maketou payment on a simplified order and update status', (done) => {
+    request(app)
+      .post('/api/orders/create')
+      .send({
+        customer_name: "Test Streamlined Pay",
+        whatsapp: "+22964044423",
+        country: "Bénin",
+        address: "Zongo, Cotonou"
+      })
+      .end((err, res) => {
+        if (err) return done(err);
+        const orderId = res.body.order_id;
+
+        request(app)
+          .post('/api/payments/maketou/simulate')
+          .send({
+            orderId: orderId,
+            status: 'SUCCESS',
+            amount: '25000',
+            payment_gateway: 'wave'
+          })
+          .expect(200)
+          .end((err, resSim) => {
+            if (err) return done(err);
+            assert.strictEqual(resSim.body.success, true);
+            assert(resSim.body.paymentId.startsWith('MT-'));
+
+            request(app)
+              .get(`/api/orders/track/${orderId}`)
+              .expect(200)
+              .end((err, resTrack) => {
+                if (err) return done(err);
+                assert.strictEqual(resTrack.body.payment_status, 'Payé');
+                assert.strictEqual(resTrack.body.status, 'En cours de préparation');
+                done();
+              });
+          });
       });
   });
 
