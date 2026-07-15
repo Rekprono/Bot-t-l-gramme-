@@ -361,6 +361,12 @@ app.post('/api/orders/create', (req, res) => {
               });
             };
 
+            // If API credentials are not set yet, immediately use the WhatsApp live billing system to prevent fake/sandbox payment bypass
+            if (!maketouKey) {
+              console.log("[MAKETOU API] No API Key found, routing to secure WhatsApp live billing.");
+              return triggerWhatsAppFallback();
+            }
+
             // Build request parameters matching Maketou's live automated payment gateway specification
             const postData = JSON.stringify({
               amount: finalPrice,

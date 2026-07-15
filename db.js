@@ -185,7 +185,9 @@ function initDb() {
         { key: "shipping_cost", value: "0" }, // Free Shipping
         { key: "moneyfusion_api_url", value: "https://api.moneyfusion.net/v1/payment" },
         { key: "moneyfusion_merchant_id", value: "MF-MYSTIQUE" },
-        { key: "moneyfusion_api_key", value: "" } // Never store production keys/secrets in source code. Managed via environment variables or admin configuration.
+        { key: "moneyfusion_api_key", value: "" }, // Never store production keys/secrets in source code. Managed via environment variables or admin configuration.
+        { key: "maketou_api_url", value: "https://api.maketou.com/v1/payment" },
+        { key: "maketou_api_key", value: "" }
       ];
 
       defaultSettings.forEach(s => {
