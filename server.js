@@ -1110,12 +1110,17 @@ app.put('/api/admin/settings', requireAdmin, (req, res) => {
   }, 300);
 });
 
+// Initialize database on startup (crucial for serverless environments where require.main may not be equal to module)
+initDb().then(() => {
+  console.log("[Mystique Shop DB] Database successfully loaded/initialized.");
+}).catch((err) => {
+  console.error("[Mystique Shop DB] Critical database initialization error:", err);
+});
+
 // Start Express Server only if run directly (not required)
 if (require.main === module) {
-  initDb().then(() => {
-    app.listen(PORT, () => {
-      console.log(`[Mystique Shop Server] running on http://localhost:${PORT}`);
-    });
+  app.listen(PORT, () => {
+    console.log(`[Mystique Shop Server] running on http://localhost:${PORT}`);
   });
 }
 

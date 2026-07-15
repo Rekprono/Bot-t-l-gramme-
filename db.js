@@ -1,8 +1,26 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fs = require('fs');
 const crypto = require('crypto');
 
-const dbPath = path.resolve(__dirname, 'database.sqlite');
+const isVercel = process.env.VERCEL || process.env.NOW_BUILDER;
+let dbPath = path.resolve(__dirname, 'database.sqlite');
+
+if (isVercel) {
+  const tmpDbPath = path.resolve('/tmp', 'database.sqlite');
+  try {
+    if (!fs.existsSync(tmpDbPath)) {
+      if (fs.existsSync(dbPath)) {
+        fs.copyFileSync(dbPath, tmpDbPath);
+        console.log("Database copied to /tmp successfully.");
+      }
+    }
+  } catch (err) {
+    console.error("Failed to copy database to /tmp:", err);
+  }
+  dbPath = tmpDbPath;
+}
+
 const db = new sqlite3.Database(dbPath);
 
 // Helper function to hash password securely using node:crypto
